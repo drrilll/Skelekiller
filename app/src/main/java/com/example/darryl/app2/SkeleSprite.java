@@ -69,8 +69,8 @@ public class SkeleSprite implements Drawable, Sprite{
         for (int i = 0; i<HITFRAMES ; i++) {
             skelHit[i] = Bitmap.createBitmap(map, i * interval, 0, interval, map.getHeight());
         }
-        numImages = IDLEFRAMES;
-        image = skelIdle;
+        numImages = DEADFRAMES;
+        image = skelDead;
         modx=0;mody=0;
     }
 
@@ -125,7 +125,9 @@ public class SkeleSprite implements Drawable, Sprite{
             currentImage++;
             if (currentImage >= numImages){
                 currentImage = 0;
-                setAction(Action.idle);
+                if (action == Action.attack) {
+                    setAction(Action.idle);
+                }
             }
             imageTimer = 0;
         }

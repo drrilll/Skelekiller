@@ -15,8 +15,11 @@ import java.util.ArrayList;
 class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private GameThread gameThread;
     private SkeleSprite skeleSprite;
+    private AdventSprite advSprite;
     private ArrayList<Drawable> drawables;
     private AttackButton abutton;
+    private WalkButton wbutton, wlbutton;
+    private DeadButton dbutton;
 
     public GameView(Context context) {
         super(context);
@@ -25,23 +28,40 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
         setFocusable(true);
         drawables = new ArrayList<>();
         abutton = new AttackButton(500,1000);
+        wbutton = new WalkButton(700,1000);
+        dbutton = new DeadButton(900,1000);
+        wlbutton = new WalkButton(300,1000);
+
+
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event){
         if (abutton.checkTouched(event)){
+            skeleSprite.setAction(SkeleSprite.Action.dead);
+        }else if (wbutton.checkTouched(event)){
+            skeleSprite.setAction(SkeleSprite.Action.walkright);
+        }else if (dbutton.checkTouched(event)){
             skeleSprite.setAction(SkeleSprite.Action.attack);
+        }else if (wlbutton.checkTouched(event)){
+            skeleSprite.setAction(SkeleSprite.Action.walkleft);
+        }else{
+            skeleSprite.setAction(SkeleSprite.Action.idle);
         }
         return true;
     }
 
     @Override
-    public void surfaceCreated(SurfaceHolder surfaceHolder) {
-
+    public void surfaceCreated(SurfaceHolder surfaceHolder){
         skeleSprite = new SkeleSprite(getResources());
-        skeleSprite.setAction(SkeleSprite.Action.hit);
+        advSprite = new AdventSprite(getResources());
+        skeleSprite.setAction(SkeleSprite.Action.dead);
         drawables.add(skeleSprite);
+        drawables.add(advSprite);
         drawables.add(abutton);
+        drawables.add(wbutton);
+        drawables.add(dbutton);
+        drawables.add(wlbutton);
         gameThread.setRunning(true);
         gameThread.start();
     }
