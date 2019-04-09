@@ -6,28 +6,42 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+
+import java.util.ArrayList;
 
 class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private GameThread gameThread;
     private SkeleSprite skeleSprite;
+    private ArrayList<Drawable> drawables;
+    private AttackButton abutton;
+
     public GameView(Context context) {
         super(context);
         getHolder().addCallback(this);
         gameThread = new GameThread(getHolder(), this);
         setFocusable(true);
+        drawables = new ArrayList<>();
+        abutton = new AttackButton(500,1000);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event){
+        if (abutton.checkTouched(event)){
+            skeleSprite.setAction(SkeleSprite.Action.attack);
+        }
+        return true;
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
-        Bitmap map = BitmapFactory.decodeResource(getResources(), R.drawable.skeletonreact);
-        Bitmap[] allskels = new Bitmap[4];
-        int interval = map.getWidth()/4;
-        for (int i = 0; i<4 ; i++){
-            allskels[i] = Bitmap.createBitmap(map,i*interval ,0,interval, map.getHeight());
-        }
-        skeleSprite = new SkeleSprite(allskels);
+
+        skeleSprite = new SkeleSprite(getResources());
+        skeleSprite.setAction(SkeleSprite.Action.hit);
+        drawables.add(skeleSprite);
+        drawables.add(abutton);
         gameThread.setRunning(true);
         gameThread.start();
     }
@@ -54,15 +68,15 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     public void update() {
         skeleSprite.update();
     }
+
     @Override
     public void draw(Canvas canvas){
         super.draw(canvas);
         if (canvas != null){
             //canvas.drawColor(Color.WHITE);
-            //Paint paint = new Paint();
-            //paint.setColor(Color.rgb(250,0,0));
-            //canvas.drawRect(100,100,200,200,paint);
-            skeleSprite.draw(canvas);
+            for (Drawable drawable:drawables) {
+                drawable.draw(canvas);
+            }
         }
     }
 }
