@@ -20,16 +20,8 @@ public class MainActivity extends AppCompatActivity {
     /** Called when the user taps the Send button */
     public void sendMessage(View view) {
         Intent intent = new Intent(this, Game.class);
-        EditText editText = (EditText) findViewById(R.id.editText);
-        String message = editText.getText().toString();
-        intent.putExtra(EXTRA_MESSAGE, message);
         startActivity(intent);
     }
 
-
-    public void display_stuff(View view){
-        TextView text = (TextView)findViewById(R.id.editText);
-        text.setText("Wait!");
-    }
 }
 

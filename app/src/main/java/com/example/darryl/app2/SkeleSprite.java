@@ -80,10 +80,14 @@ public class SkeleSprite implements Drawable, Sprite{
             case hit:
                 image = skelHit;
                 numImages = HITFRAMES;
+                modx=0;
+                mody=0;
                 break;
             case dead:
                 image = skelDead;
                 numImages = DEADFRAMES;
+                modx=-30;
+                mody=0;
                 break;
             case idle:
                 image = skelIdle;
@@ -95,10 +99,14 @@ public class SkeleSprite implements Drawable, Sprite{
             case walkright:
                 image = skelWalk;
                 numImages = WALKFRAMES;
+                modx=0;
+                mody=0;
                 break;
             case react:
                 image = skelReact;
                 numImages = REACTFRAMES;
+                modx=0;
+                mody=0;
                 break;
             case attack:
                 image = skelAttack;

@@ -39,14 +39,19 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     public boolean onTouchEvent(MotionEvent event){
         if (abutton.checkTouched(event)){
             skeleSprite.setAction(SkeleSprite.Action.dead);
+            advSprite.setAction(AdventSprite.AdvAction.att1);
         }else if (wbutton.checkTouched(event)){
             skeleSprite.setAction(SkeleSprite.Action.walkright);
+            advSprite.setAction(AdventSprite.AdvAction.run);
         }else if (dbutton.checkTouched(event)){
             skeleSprite.setAction(SkeleSprite.Action.attack);
+            advSprite.setAction(AdventSprite.AdvAction.att3);
         }else if (wlbutton.checkTouched(event)){
             skeleSprite.setAction(SkeleSprite.Action.walkleft);
+            advSprite.setAction(AdventSprite.AdvAction.att2);
         }else{
             skeleSprite.setAction(SkeleSprite.Action.idle);
+            advSprite.setAction(AdventSprite.AdvAction.idle);
         }
         return true;
     }
@@ -56,6 +61,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
         skeleSprite = new SkeleSprite(getResources());
         advSprite = new AdventSprite(getResources());
         skeleSprite.setAction(SkeleSprite.Action.dead);
+        advSprite.setAction(AdventSprite.AdvAction.att1);
         drawables.add(skeleSprite);
         drawables.add(advSprite);
         drawables.add(abutton);
