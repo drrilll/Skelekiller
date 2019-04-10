@@ -14,12 +14,10 @@ import java.util.ArrayList;
 
 class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private GameThread gameThread;
-    private SkeleSprite skeleSprite;
-    private AdventSprite advSprite;
+    SkeleSprite skeleSprite;
+    AdventSprite advSprite;
     private ArrayList<Drawable> drawables;
-    private AttackButton abutton;
-    private WalkButton wbutton, wlbutton;
-    private DeadButton dbutton;
+    private Button attack1, attack2, runleft, runright, block;
 
     public GameView(Context context) {
         super(context);
@@ -27,47 +25,46 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
         gameThread = new GameThread(getHolder(), this);
         setFocusable(true);
         drawables = new ArrayList<>();
-        abutton = new AttackButton(500,1000);
-        wbutton = new WalkButton(700,1000);
-        dbutton = new DeadButton(900,1000);
-        wlbutton = new WalkButton(300,1000);
+        block = new Button(100,1000, 100, Color.rgb(0, 0,250),"Block");
+        attack1 = new Button(block.getRightMostPoint()+50 ,1000, 100, Color.rgb(250, 0,0),"Attack1");
+        attack2 = new Button(attack1.getRightMostPoint()+50,1000, 100, Color.rgb(250, 0,0),"Attack2");
+        runleft = new Button(attack2.getRightMostPoint()+50,1000, 100, Color.rgb(0, 250,0),"<-Jump");
+        runright = new Button(runleft.getRightMostPoint()+50,1000, 100, Color.rgb(0, 250,0),"Run->");
 
 
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event){
-        if (abutton.checkTouched(event)){
-            skeleSprite.setAction(SkeleSprite.Action.dead);
-            advSprite.setAction(AdventSprite.AdvAction.att1);
-        }else if (wbutton.checkTouched(event)){
-            skeleSprite.setAction(SkeleSprite.Action.walkright);
-            advSprite.setAction(AdventSprite.AdvAction.run);
-        }else if (dbutton.checkTouched(event)){
-            skeleSprite.setAction(SkeleSprite.Action.attack);
-            advSprite.setAction(AdventSprite.AdvAction.att3);
-        }else if (wlbutton.checkTouched(event)){
-            skeleSprite.setAction(SkeleSprite.Action.walkleft);
-            advSprite.setAction(AdventSprite.AdvAction.att2);
+        if (attack1.checkTouched(event)){
+           advSprite.setAction(AdventSprite.AdvAction.att1);
+        }else if (runleft.checkTouched(event)){
+           advSprite.setAction(AdventSprite.AdvAction.jumproll);
+        }else if (runright.checkTouched(event)){
+           advSprite.setAction(AdventSprite.AdvAction.runright);
+        }else if (attack2.checkTouched(event)){
+           advSprite.setAction(AdventSprite.AdvAction.att2);
+        }else if (block.checkTouched(event)){
+           advSprite.setAction(AdventSprite.AdvAction.block);
         }else{
-            skeleSprite.setAction(SkeleSprite.Action.idle);
-            advSprite.setAction(AdventSprite.AdvAction.idle);
+           advSprite.setAction(AdventSprite.AdvAction.idlesw);
         }
         return true;
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder){
-        skeleSprite = new SkeleSprite(getResources());
-        advSprite = new AdventSprite(getResources());
-        skeleSprite.setAction(SkeleSprite.Action.dead);
-        advSprite.setAction(AdventSprite.AdvAction.att1);
+        advSprite = new AdventSprite(this);
+        skeleSprite = new SkeleSprite(this);
+        skeleSprite.setAction(SkeleSprite.Action.walkleft);
+        advSprite.setAction(AdventSprite.AdvAction.idle);
         drawables.add(skeleSprite);
         drawables.add(advSprite);
-        drawables.add(abutton);
-        drawables.add(wbutton);
-        drawables.add(dbutton);
-        drawables.add(wlbutton);
+        drawables.add(attack1);
+        drawables.add(attack2);
+        drawables.add(runleft);
+        drawables.add(runright);
+        drawables.add(block);
         gameThread.setRunning(true);
         gameThread.start();
     }
@@ -92,6 +89,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public void update() {
+        advSprite.update();
         skeleSprite.update();
     }
 
@@ -103,6 +101,22 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
             for (Drawable drawable:drawables) {
                 drawable.draw(canvas);
             }
+        }
+    }
+
+    /* In this section we resolve attacks. These are callback functions used by our sprites.
+     * A lot of hardcoding, but we will abstract later */
+
+    public void advAttack(){
+        if (skeleSprite.action == SkeleSprite.Action.dead){return;}
+        if ((skeleSprite.x - advSprite.x)< 150 ){
+            skeleSprite.setAction(SkeleSprite.Action.dead);
+        }
+    }
+
+    public void skelAttack(){
+        if (((skeleSprite.x - advSprite.x)< 150)&&(advSprite.action != AdventSprite.AdvAction.block) ){
+            advSprite.setAction(AdventSprite.AdvAction.die);
         }
     }
 }

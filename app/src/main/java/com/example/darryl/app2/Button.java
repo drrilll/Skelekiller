@@ -1,6 +1,7 @@
 package com.example.darryl.app2;
 
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.view.MotionEvent;
 
@@ -11,14 +12,27 @@ public class Button implements Drawable{
      * @return
      */
     int x, y;
-    final int width, height;
-    int color;
-    public Button(int x, int y, int width, int height, int color){
+    float width, height;
+    Paint buttonPaint,textPaint;
+    String text;
+    public Button(int x, int y, float height, int color, String text){
+        this.text = text;
         this.height = height;
-        this.width = width;
         this.x = x;
         this.y = y;
-        this.color = color;
+        buttonPaint = new Paint();
+        buttonPaint.setColor(color);
+
+        textPaint = new Paint();
+        textPaint.setTextSize(60);
+        this.width = textPaint.measureText(text);
+        if(width <150){width = 150;}
+
+        textPaint.setColor(Color.rgb(250,250,250));
+    }
+
+    public int getRightMostPoint(){
+        return x + (int)width;
     }
 
     public boolean checkTouched(MotionEvent event){
@@ -28,8 +42,8 @@ public class Button implements Drawable{
     }
 
     public void draw(Canvas canvas){
-        Paint paint = new Paint();
-        paint.setColor(color);
-        canvas.drawRect(x,y,x+width,y+height,paint);
+
+        canvas.drawRect(x,y,x+width,y+height,buttonPaint);
+        canvas.drawText(text,x,y+(height/2)+30,textPaint);
     }
 }

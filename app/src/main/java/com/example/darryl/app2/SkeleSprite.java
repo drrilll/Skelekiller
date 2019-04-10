@@ -4,9 +4,9 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.view.SurfaceView;
+import android.graphics.Matrix;
+import android.support.v4.app.NotificationCompat;
 
-import static com.example.darryl.app2.GameThread.canvas;
 
 public class SkeleSprite implements Drawable, Sprite{
     private Bitmap[] skelAttack, skelWalk, skelReact, skelIdle,skelHit,skelDead, image;
@@ -18,9 +18,12 @@ public class SkeleSprite implements Drawable, Sprite{
     private static int IDLEFRAMES = 11;
     private static int HITFRAMES = 8;
     private static int DEADFRAMES = 15;
-
+    int deathTimer = 0;
+    private AdventSprite adventurer;
+    GameView gameView;
+    static private int range = 200;
     public enum Action {idle, react, attack, hit, dead, walkleft, walkright};
-
+    int hitPoint = 7;
     Action action;
 
 
@@ -28,12 +31,17 @@ public class SkeleSprite implements Drawable, Sprite{
 
     /** Initialize our sprite
      *
-     * @param resources
      */
-    public SkeleSprite(Resources resources){
-        x = 100; y = 100; currentImage = 0;
+    public SkeleSprite(GameView view){
+        this.adventurer = view.advSprite;
+        gameView = view;
+        x = 500; y = 100; currentImage = 0;
         imageTimer = 0;
+        Resources resources = gameView.getResources();
         Bitmap map = BitmapFactory.decodeResource(resources, R.drawable.skeleton_attack);
+        Bitmap temp;
+        Matrix matrix = new Matrix();
+        float cx= 0,cy=0;
         skelAttack = new Bitmap[ATTACKFRAMES];
         skelReact  = new Bitmap[REACTFRAMES];
         skelWalk   = new Bitmap[WALKFRAMES];
@@ -42,32 +50,62 @@ public class SkeleSprite implements Drawable, Sprite{
         skelHit   = new Bitmap[HITFRAMES];
         int interval = map.getWidth()/ATTACKFRAMES;
         for (int i = 0; i<ATTACKFRAMES ; i++){
-            skelAttack[i] = Bitmap.createBitmap(map,i*interval ,0,interval, map.getHeight());
+            temp = Bitmap.createBitmap(map,i*interval ,0,interval, map.getHeight());
+            cx = temp.getWidth()/2;
+            cy = temp.getHeight()/2;
+            matrix.reset();
+            matrix.postScale(-1,1,cx,cy);
+            skelAttack[i] = Bitmap.createBitmap(temp,0 ,0,temp.getWidth(), temp.getHeight(), matrix, true);
         }
         map = BitmapFactory.decodeResource(resources, R.drawable.skeletonreact);
         interval = map.getWidth()/REACTFRAMES;
         for (int i = 0; i<REACTFRAMES ; i++){
-            skelReact[i] = Bitmap.createBitmap(map,i*interval ,0,interval, map.getHeight());
+            temp = Bitmap.createBitmap(map,i*interval ,0,interval, map.getHeight());
+            cx = temp.getWidth()/2;
+            cy = temp.getHeight()/2;
+            matrix.reset();
+            matrix.postScale(-1,1,cx,cy);
+            skelReact[i] = Bitmap.createBitmap(temp,0 ,0,temp.getWidth(), temp.getHeight(), matrix, true);
         }
         map = BitmapFactory.decodeResource(resources, R.drawable.skeleton_walk);
         interval = map.getWidth()/WALKFRAMES;
         for (int i = 0; i<WALKFRAMES ; i++){
-            skelWalk[i] = Bitmap.createBitmap(map,i*interval ,0,interval, map.getHeight());
+            temp = Bitmap.createBitmap(map,i*interval ,0,interval, map.getHeight());
+            cx = temp.getWidth()/2;
+            cy = temp.getHeight()/2;
+            matrix.reset();
+            matrix.postScale(-1,1,cx,cy);
+            skelWalk[i] = Bitmap.createBitmap(temp,0 ,0,temp.getWidth(), temp.getHeight(), matrix, true);
         }
         map = BitmapFactory.decodeResource(resources, R.drawable.skeleton_dead);
         interval = map.getWidth()/DEADFRAMES;
         for (int i = 0; i<DEADFRAMES ; i++){
-            skelDead[i] = Bitmap.createBitmap(map,i*interval ,0,interval, map.getHeight());
+            temp = Bitmap.createBitmap(map,i*interval ,0,interval, map.getHeight());
+            cx = temp.getWidth()/2;
+            cy = temp.getHeight()/2;
+            matrix.reset();
+            matrix.postScale(-1,1,cx,cy);
+            skelDead[i] = Bitmap.createBitmap(temp,0 ,0,temp.getWidth(), temp.getHeight(), matrix, true);
         }
         map = BitmapFactory.decodeResource(resources, R.drawable.skeleton_idle);
         interval = map.getWidth()/IDLEFRAMES;
         for (int i = 0; i<IDLEFRAMES ; i++){
-            skelIdle[i] = Bitmap.createBitmap(map,i*interval ,0,interval, map.getHeight());
+            temp = Bitmap.createBitmap(map,i*interval ,0,interval, map.getHeight());
+            cx = temp.getWidth()/2;
+            cy = temp.getHeight()/2;
+            matrix.reset();
+            matrix.postScale(-1,1,cx,cy);
+            skelIdle[i] = Bitmap.createBitmap(temp,0 ,0,temp.getWidth(), temp.getHeight(), matrix, true);
         }
         map = BitmapFactory.decodeResource(resources, R.drawable.skeleton_hit);
         interval = map.getWidth()/HITFRAMES;
         for (int i = 0; i<HITFRAMES ; i++) {
-            skelHit[i] = Bitmap.createBitmap(map, i * interval, 0, interval, map.getHeight());
+            temp = Bitmap.createBitmap(map,i*interval ,0,interval, map.getHeight());
+            cx = temp.getWidth()/2;
+            cy = temp.getHeight()/2;
+            matrix.reset();
+            matrix.postScale(-1,1,cx,cy);
+            skelHit[i] = Bitmap.createBitmap(temp,0 ,0,temp.getWidth(), temp.getHeight(), matrix, true);
         }
         numImages = DEADFRAMES;
         image = skelDead;
@@ -86,7 +124,7 @@ public class SkeleSprite implements Drawable, Sprite{
             case dead:
                 image = skelDead;
                 numImages = DEADFRAMES;
-                modx=-30;
+                modx=15;
                 mody=0;
                 break;
             case idle:
@@ -111,17 +149,26 @@ public class SkeleSprite implements Drawable, Sprite{
             case attack:
                 image = skelAttack;
                 numImages = ATTACKFRAMES;
-                modx=-15;mody=-17;
+                modx=-55;mody=-17;
         }
         imageTimer = 0;
         currentImage = 0;
     }
 
     public void draw(Canvas canvas){
+
         canvas.drawBitmap(image[currentImage],x+modx,y+mody, null);
     }
 
+    /**
+     * We will implement AI here. Skeleton walks left until in range, then attacks, and if hit, dies
+     */
     public void update(){
+        if ((action !=Action.dead)&&(action != Action.attack)){
+            if (Math.abs(adventurer.x - x)<range){
+                setAction(Action.attack);
+            }
+        }
         if (action == Action.walkright) {
             x++;
         }
@@ -131,10 +178,25 @@ public class SkeleSprite implements Drawable, Sprite{
         imageTimer ++;
         if (imageTimer>TIMERINTERVAL){
             currentImage++;
+            if (action == Action.attack) {
+                if (currentImage == hitPoint) {
+                    gameView.skelAttack();
+                }
+            }
             if (currentImage >= numImages){
                 currentImage = 0;
                 if (action == Action.attack) {
-                    setAction(Action.idle);
+                    x-=10;
+                    //gameView.skelAttack();
+                    setAction(Action.walkleft);
+                }else if (action == Action.dead){
+                    // a hacky way to stay dead
+                    currentImage = numImages -1;
+                    if(deathTimer++ > 50){
+                        deathTimer = 0;
+                        x = 1500;
+                        setAction(Action.walkleft);
+                    }
                 }
             }
             imageTimer = 0;

@@ -4,18 +4,23 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Point;
 
 public class AdventSprite implements Drawable, Sprite{
         private Bitmap[][] adventurer;
         private static int ADVSTATES = 13;
         private static int MAXFRAMES = 9;
-        private int[] frames = {4,4,6,8,7,9,4,6,5,6,5,4,4};
 
+        //keep in mind, this goes into two blank frames, which is ok for now I think, but not
+        //a real good practice to have meaningless dangling into empty bitmaps like this. That is
+        // the last value should be 4, but we need it as 6
+        private int[] frames = {4,4,6,8,7,9,4,6,5,6,3,4,4};
 
-        int x,y, modx, mody, numImages, currentImage, imageTimer;
+        int x, y, modx, mody, numImages, currentImage, imageTimer;
         private static int TIMERINTERVAL = 6;
 
-        public enum AdvAction {idle, crouch, run, jumproll, slide, climb, idlesw, att1, att2, att3, hit, die, jump};
+        public enum AdvAction {idle, crouch, runright, jumproll, slide, climb, idlesw, att1, att2, att3, block, die, jump};
+        GameView gameView;
 
         AdvAction action;
 
@@ -24,18 +29,14 @@ public class AdventSprite implements Drawable, Sprite{
 
         /** Initialize our sprite
          *
-         * @param resources
          */
-    public AdventSprite(Resources resources){
+    public AdventSprite(GameView view){
+            gameView = view;
             x = 200; y = 100; currentImage = 0;
-            modx = 0; mody=0;
+            modx = 0; mody=-15;
             imageTimer = 0;
-            Bitmap map = BitmapFactory.decodeResource(resources, R.drawable.adventurer);
+            Bitmap map = BitmapFactory.decodeResource(gameView.getResources(), R.drawable.adventurer);
             adventurer = new Bitmap[ADVSTATES][MAXFRAMES];
-            /*int columns = 7, width = map.getWidth()/columns, height = map.getHeight()/11;
-            for (int i = 0; i < 6; i++){
-                adventurer[AdvAction.att1.ordinal()][i] = Bitmap.createBitmap(map, i*width, 6*height, width, height);
-            }*/
 
             int frameCount = 0, columns = 7, width = map.getWidth()/columns, height = map.getHeight()/11;
             for (int i=0; i< ADVSTATES; i++){
@@ -51,14 +52,26 @@ public class AdventSprite implements Drawable, Sprite{
                     }
                 }
             }
+        // we want to repeat some frames for block
+        adventurer[AdvAction.block.ordinal()][1]= adventurer[AdvAction.block.ordinal()][0];
+        adventurer[AdvAction.block.ordinal()][2]= adventurer[AdvAction.block.ordinal()][0];
+        // we want this to be "runleft" for now
+        //adventurer[AdvAction.runleft.ordinal()] = adventurer[AdvAction.runright.ordinal()];
         }
 
+
+
         public void setAction(AdvAction action){
+
+            if ((action == AdvAction.att1)||(action == AdvAction.att2)||(action == AdvAction.att3)){
+                if (this.action == AdvAction.die){
+                    return;
+                }
+            }
             this.action = action;
-        }
-/*
-        public void setAction(SkeleSprite.Action newAction) {
-            this.action = newAction;
+            imageTimer = 0;
+            currentImage = 0;
+            /*
             switch (action) {
                 case hit:
                     image = skelHit;
@@ -87,27 +100,38 @@ public class AdventSprite implements Drawable, Sprite{
                     image = skelAttack;
                     numImages = ATTACKFRAMES;
                     modx=-15;mody=-17;
-            }
-            imageTimer = 0;
-            currentImage = 0;
-        }*/
+            }*/
+
+        }
+
 
         public void draw(Canvas canvas){
+            canvas.drawBitmap(adventurer[action.ordinal()][currentImage],x+modx,y+mody, null);
+        }
+
+        public void update() {
+            if (action == AdvAction.runright){
+                x+=2;
+            }else if (action == AdvAction.jumproll) {
+                if (currentImage > 1) {
+                    x -= 2;
+                }
+            }
             imageTimer ++;
             if (imageTimer>TIMERINTERVAL){
                 currentImage++;
                 if (currentImage >= frames[action.ordinal()]){
                     currentImage = 0;
-                    //if (action == AdvAction.att1) {
-                    //    setAction(AdvAction.idle);
-                    //}
+                    if ((action == AdvAction.att1)||(action == AdvAction.att2)||(action == AdvAction.att3)){
+                        gameView.advAttack();
+                    }
+                    if ((action != AdvAction.jump)&&(action != AdvAction.runright)) {
+                        setAction(AdvAction.idlesw);
+                    }
+
                 }
                 imageTimer = 0;
             }
-            canvas.drawBitmap(adventurer[action.ordinal()][currentImage],x+modx,y+mody, null);
-        }
-
-        public void update() {
         }
     }
 
