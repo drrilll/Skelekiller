@@ -4,20 +4,22 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Point;
 
+
 public class AdventSprite implements Drawable, Sprite{
-        private Bitmap[][] adventurer;
+        private Bitmap[][][] adventurer; //[right/left][state][frame]
         private static int ADVSTATES = 13;
         private static int MAXFRAMES = 9;
+        private static int SPEED = 6;
+        private Location location;
 
-        //keep in mind, this goes into two blank frames, which is ok for now I think, but not
-        //a real good practice to have meaningless dangling into empty bitmaps like this. That is
-        // the last value should be 4, but we need it as 6
+
         private int[] frames = {4,4,6,8,7,9,4,6,5,6,3,4,4};
 
-        int x, y, modx, mody, numImages, currentImage, imageTimer;
-        private static int TIMERINTERVAL = 6;
+        int loc, x, y, modx, mody, numImages, currentImage, imageTimer, facing;
+        private static int TIMERINTERVAL = 3, RIGHT = 0, LEFT =1;
 
         public enum AdvAction {idle, crouch, runright, jumproll, slide, climb, idlesw, att1, att2, att3, block, die, jump};
         GameView gameView;
@@ -32,12 +34,16 @@ public class AdventSprite implements Drawable, Sprite{
          */
     public AdventSprite(GameView view){
             gameView = view;
-            x = 200; y = 100; currentImage = 0;
+            loc = 0;
+            x = 500; y = 500; currentImage = 0;
             modx = 0; mody=-15;
             imageTimer = 0;
+            location = new Location(500);
             Bitmap map = BitmapFactory.decodeResource(gameView.getResources(), R.drawable.adventurer);
-            adventurer = new Bitmap[ADVSTATES][MAXFRAMES];
-
+            adventurer = new Bitmap[2][ADVSTATES][MAXFRAMES];
+            Bitmap temp;
+            Matrix matrix = new Matrix();
+            float cx= 0,cy=0;
             int frameCount = 0, columns = 7, width = map.getWidth()/columns, height = map.getHeight()/11;
             for (int i=0; i< ADVSTATES; i++){
                 for (int j = 0; j < MAXFRAMES; j++){
@@ -46,17 +52,26 @@ public class AdventSprite implements Drawable, Sprite{
                         int currentColumn = frameCount - (currentRow*columns);
                         int xindex = currentColumn*width;
                         int yindex = currentRow*height;
-                        adventurer[i][j] = Bitmap.createBitmap(map, xindex, yindex,
+                        adventurer[RIGHT][i][j] = Bitmap.createBitmap(map, xindex, yindex,
                                 width, height);
+                        temp = adventurer[RIGHT][i][j];
+                        cx = temp.getWidth()/2;
+                        cy = temp.getHeight()/2;
+                        matrix.reset();
+                        matrix.postScale(-1,1,cx,cy);
+                        adventurer[LEFT][i][j] = Bitmap.createBitmap(temp,0 ,0,temp.getWidth(), temp.getHeight(), matrix, true);
                         frameCount ++;
                     }
                 }
             }
-        // we want to repeat some frames for block
-        adventurer[AdvAction.block.ordinal()][1]= adventurer[AdvAction.block.ordinal()][0];
-        adventurer[AdvAction.block.ordinal()][2]= adventurer[AdvAction.block.ordinal()][0];
-        // we want this to be "runleft" for now
-        //adventurer[AdvAction.runleft.ordinal()] = adventurer[AdvAction.runright.ordinal()];
+            // we want to repeat some frames for block
+            adventurer[RIGHT][AdvAction.block.ordinal()][1]= adventurer[RIGHT][AdvAction.block.ordinal()][0];
+            adventurer[RIGHT][AdvAction.block.ordinal()][2]= adventurer[RIGHT][AdvAction.block.ordinal()][0];
+            facing = RIGHT;
+
+            /*
+             * Here we make all the left facing versions.
+             */
         }
 
 
@@ -71,60 +86,38 @@ public class AdventSprite implements Drawable, Sprite{
             this.action = action;
             imageTimer = 0;
             currentImage = 0;
-            /*
-            switch (action) {
-                case hit:
-                    image = skelHit;
-                    numImages = HITFRAMES;
-                    break;
-                case dead:
-                    image = skelDead;
-                    numImages = DEADFRAMES;
-                    break;
-                case idle:
-                    image = skelIdle;
-                    numImages = IDLEFRAMES;
-                    modx=0;
-                    mody=0;
-                    break;
-                case walkleft:
-                case walkright:
-                    image = skelWalk;
-                    numImages = WALKFRAMES;
-                    break;
-                case react:
-                    image = skelReact;
-                    numImages = REACTFRAMES;
-                    break;
-                case attack:
-                    image = skelAttack;
-                    numImages = ATTACKFRAMES;
-                    modx=-15;mody=-17;
-            }*/
 
+        }
+
+        public Location getLocation(){
+            return location;
         }
 
 
         public void draw(Canvas canvas){
-            canvas.drawBitmap(adventurer[action.ordinal()][currentImage],x+modx,y+mody, null);
+            canvas.drawBitmap(adventurer[facing][action.ordinal()][currentImage],x+modx,y+mody, null);
         }
 
         public void update() {
-            if (action == AdvAction.runright){
-                x+=2;
+            if ((action == AdvAction.runright)||(action == AdvAction.slide)){
+                location.loc+=SPEED;
             }else if (action == AdvAction.jumproll) {
                 if (currentImage > 1) {
-                    x -= 2;
+                    location.loc -= SPEED;
                 }
             }
             imageTimer ++;
             if (imageTimer>TIMERINTERVAL){
                 currentImage++;
-                if (currentImage >= frames[action.ordinal()]){
-                    currentImage = 0;
-                    if ((action == AdvAction.att1)||(action == AdvAction.att2)||(action == AdvAction.att3)){
+                //check if we are in the hitting phase of some attack, which is halfway through
+                //the swing
+                if ((action == AdvAction.att1)||(action == AdvAction.att2)||(action == AdvAction.att3)){
+                    if (currentImage == frames[action.ordinal()]/2) {
                         gameView.advAttack();
                     }
+                }
+                if (currentImage >= frames[action.ordinal()]){
+                    currentImage = 0;
                     if ((action != AdvAction.jump)&&(action != AdvAction.runright)) {
                         setAction(AdvAction.idlesw);
                     }

@@ -11,20 +11,21 @@ import android.support.v4.app.NotificationCompat;
 public class SkeleSprite implements Drawable, Sprite{
     private Bitmap[] skelAttack, skelWalk, skelReact, skelIdle,skelHit,skelDead, image;
     int x,y, modx, mody, numImages, currentImage, imageTimer;
-    public static int TIMERINTERVAL = 4;
+    public static int TIMERINTERVAL = 2;
     private static int WALKFRAMES = 13;
     private static int ATTACKFRAMES = 18;
     private static int REACTFRAMES = 4;
     private static int IDLEFRAMES = 11;
     private static int HITFRAMES = 8;
     private static int DEADFRAMES = 15;
-    int deathTimer = 0;
+    private static int SPEED = 2;
     private AdventSprite adventurer;
     GameView gameView;
     static private int range = 200;
     public enum Action {idle, react, attack, hit, dead, walkleft, walkright};
     int hitPoint = 7;
     Action action;
+    Location location;
 
 
 
@@ -32,10 +33,11 @@ public class SkeleSprite implements Drawable, Sprite{
     /** Initialize our sprite
      *
      */
-    public SkeleSprite(GameView view){
+    public SkeleSprite(GameView view, Location location){
         this.adventurer = view.advSprite;
+        this.location = location;
         gameView = view;
-        x = 500; y = 100; currentImage = 0;
+        x = 500; y = 500; currentImage = 0;
         imageTimer = 0;
         Resources resources = gameView.getResources();
         Bitmap map = BitmapFactory.decodeResource(resources, R.drawable.skeleton_attack);
@@ -165,42 +167,41 @@ public class SkeleSprite implements Drawable, Sprite{
      */
     public void update(){
         if ((action !=Action.dead)&&(action != Action.attack)){
-            if (Math.abs(adventurer.x - x)<range){
+            if (Math.abs(adventurer.getLocation().loc - location.loc)<range){
                 setAction(Action.attack);
             }
         }
         if (action == Action.walkright) {
-            x++;
+            location.loc+=SPEED;
         }
         if (action == Action.walkleft) {
-            x--;
+            location.loc-=SPEED;
         }
         imageTimer ++;
         if (imageTimer>TIMERINTERVAL){
             currentImage++;
             if (action == Action.attack) {
                 if (currentImage == hitPoint) {
-                    gameView.skelAttack();
+                    gameView.skelAttack(this);
                 }
             }
             if (currentImage >= numImages){
                 currentImage = 0;
                 if (action == Action.attack) {
-                    x-=10;
-                    //gameView.skelAttack();
+                    location.loc-=10;
                     setAction(Action.walkleft);
                 }else if (action == Action.dead){
                     // a hacky way to stay dead
                     currentImage = numImages -1;
-                    if(deathTimer++ > 50){
+                    /*if(deathTimer++ > 30){
                         deathTimer = 0;
                         x = 1500;
                         setAction(Action.walkleft);
-                    }
+                    }*/
                 }
             }
             imageTimer = 0;
         }
-
+        x = location.loc - gameView.getHeroLocation().loc + 500;
     }
 }

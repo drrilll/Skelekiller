@@ -14,10 +14,13 @@ import java.util.ArrayList;
 
 class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private GameThread gameThread;
-    SkeleSprite skeleSprite;
+    SkeleSprite[] skeleSprites;
     AdventSprite advSprite;
+    Background background;
+    World world;
     private ArrayList<Drawable> drawables;
-    private Button attack1, attack2, runleft, runright, block;
+    private ArrayList<Sprite> updateables;
+    private Button attack1, attack2, runleft, runright, block, slide;
 
     public GameView(Context context) {
         super(context);
@@ -25,13 +28,14 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
         gameThread = new GameThread(getHolder(), this);
         setFocusable(true);
         drawables = new ArrayList<>();
+        updateables = new ArrayList<>();
         block = new Button(100,1000, 100, Color.rgb(0, 0,250),"Block");
         attack1 = new Button(block.getRightMostPoint()+50 ,1000, 100, Color.rgb(250, 0,0),"Attack1");
         attack2 = new Button(attack1.getRightMostPoint()+50,1000, 100, Color.rgb(250, 0,0),"Attack2");
         runleft = new Button(attack2.getRightMostPoint()+50,1000, 100, Color.rgb(0, 250,0),"<-Jump");
         runright = new Button(runleft.getRightMostPoint()+50,1000, 100, Color.rgb(0, 250,0),"Run->");
-
-
+        slide = new Button(runright.getRightMostPoint()+50,1000, 100, Color.rgb(0, 250,0),"Slide->");
+        world = new World();
     }
 
     @Override
@@ -46,6 +50,8 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
            advSprite.setAction(AdventSprite.AdvAction.att2);
         }else if (block.checkTouched(event)){
            advSprite.setAction(AdventSprite.AdvAction.block);
+        }else if (slide.checkTouched(event)){
+            advSprite.setAction(AdventSprite.AdvAction.slide);
         }else{
            advSprite.setAction(AdventSprite.AdvAction.idlesw);
         }
@@ -54,17 +60,27 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder){
+        background = new Background(this);
+        drawables.add(background);
+        updateables.add(background);
         advSprite = new AdventSprite(this);
-        skeleSprite = new SkeleSprite(this);
-        skeleSprite.setAction(SkeleSprite.Action.walkleft);
         advSprite.setAction(AdventSprite.AdvAction.idle);
-        drawables.add(skeleSprite);
         drawables.add(advSprite);
+        updateables.add(advSprite);
+        skeleSprites = new SkeleSprite[4];
+        for (int i = 0; i< 4; i++){
+            skeleSprites[i] = new SkeleSprite(this,new Location(i*2000 +1000));
+            skeleSprites[i].setAction(SkeleSprite.Action.walkleft);
+            drawables.add(skeleSprites[i]);
+            updateables.add(skeleSprites[i]);
+        }
+
         drawables.add(attack1);
         drawables.add(attack2);
         drawables.add(runleft);
         drawables.add(runright);
         drawables.add(block);
+        drawables.add(slide);
         gameThread.setRunning(true);
         gameThread.start();
     }
@@ -89,8 +105,13 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public void update() {
-        advSprite.update();
-        skeleSprite.update();
+        for (Sprite sprite: updateables){
+            sprite.update();
+        }
+    }
+
+    public Location getHeroLocation(){
+        return advSprite.getLocation();
     }
 
     @Override
@@ -108,14 +129,18 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
      * A lot of hardcoding, but we will abstract later */
 
     public void advAttack(){
-        if (skeleSprite.action == SkeleSprite.Action.dead){return;}
-        if ((skeleSprite.x - advSprite.x)< 150 ){
-            skeleSprite.setAction(SkeleSprite.Action.dead);
+        for (SkeleSprite skeleSprite: skeleSprites) {
+            if (skeleSprite.action != SkeleSprite.Action.dead) {
+                if ((skeleSprite.x - advSprite.x) < 150) {
+                    skeleSprite.setAction(SkeleSprite.Action.dead);
+                }
+            }
         }
     }
 
-    public void skelAttack(){
-        if (((skeleSprite.x - advSprite.x)< 150)&&(advSprite.action != AdventSprite.AdvAction.block) ){
+    public void skelAttack(SkeleSprite skeleSprite){
+        if (((skeleSprite.x - advSprite.x)< 150)&&(advSprite.action != AdventSprite.AdvAction.block)
+                &&(advSprite.action != AdventSprite.AdvAction.slide)){
             advSprite.setAction(AdventSprite.AdvAction.die);
         }
     }
